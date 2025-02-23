@@ -1,6 +1,6 @@
 # SwiftIoC Integration Guide
 
-SwiftIoC is a lightweight dependency injection library designed to simplify the management of dependencies in Swift applications. It helps in decoupling components, making code more modular and testable.
+SwiftIoC is a lightweight dependency injection library designed to simplify dependency management in Swift applications. It helps decouple components, making code more modular and testable.
 
 ## Adding to the Project
 
@@ -9,11 +9,48 @@ SwiftIoC is a lightweight dependency injection library designed to simplify the 
 ## Creating a Resolver with IoC Container
 
 - Define your custom resolver using SwiftIoC.
-- Configure the IoC container.
 
 ```swift
 import SwiftIoC
 
+extension Relux {
+    @MainActor
+    struct Registry {
+        static let ioc = IoC()
+    }
+}
+```
+
+## Adding Resolver Accessors to the Container
+
+- Extend the IoC container with resolver accessors.
+
+```swift
+// Resolver
+extension Relux.Registry {
+    static func optionalResolve<T: Sendable>(_ type: T.Type) async -> T? where T.Type: Sendable {
+        await ioc.get(by: type)
+    }
+
+    static func optionalResolve<T>(_ type: T.Type) -> T? {
+        ioc.get(by: type)
+    }
+
+    static func resolve<T: Sendable>(_ type: T.Type) async -> T {
+        await ioc.get(by: type)!
+    }
+
+    static func resolve<T>(_ type: T.Type) -> T {
+        ioc.get(by: type)!
+    }
+}
+```
+
+## Configuring the IoC Container
+
+- Configure the IoC container with necessary dependencies.
+
+```swift
 extension Relux {
     @MainActor
     struct Registry {
@@ -52,30 +89,9 @@ extension Relux.Registry {
 }
 ```
 
-## Adding Resolver Accessors to the Container
-
-```swift
-// Resolver
-extension Relux.Registry {
-    static func optionalResolve<T: Sendable>(_ type: T.Type) async -> T? where T.Type: Sendable {
-        await ioc.get(by: type)
-    }
-
-    static func optionalResolve<T>(_ type: T.Type) -> T? {
-        ioc.get(by: type)
-    }
-
-    static func resolve<T: Sendable>(_ type: T.Type) async -> T {
-        await ioc.get(by: type)!
-    }
-
-    static func resolve<T>(_ type: T.Type) -> T {
-        ioc.get(by: type)!
-    }
-}
-```
-
 ## Using the Resolver to Obtain Implementations
+
+- Use the configured IoC container to resolve and obtain implementations.
 
 ```swift
 private func configureModules() async -> Relux {

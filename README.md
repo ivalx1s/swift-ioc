@@ -16,10 +16,32 @@ import SwiftIoC
 extension Relux {
     @MainActor
     struct Registry {
-        static let ioc = IoC()
+        static let ioc = IoC(logger: IoC.Logger(enabled: true))
     }
 }
 ```
+
+## Logger Integration
+
+- The IoC container supports logging through the `ILogger` protocol.
+- By default, logging is enabled, but it can be disabled when initializing IoC.
+- A custom logger can be provided by conforming to `ILogger`.
+
+### Example Usage
+
+```swift
+// Default instantiation with logging enabled
+static let ioc = IoC()
+
+// Disable logging
+static let ioc = IoC(logger: IoC.Logger(enabled: false))
+
+// Use a custom logger
+static let ioc = IoC(logger: MyCustomLogger())
+```
+
+- To disable logging, set `enabled: false`.
+- To use a custom logger, implement `ILogger` and pass it during IoC instantiation.
 
 ## Adding Resolver Accessors to the Container
 
@@ -47,6 +69,10 @@ extension Relux.Registry {
 ```
 
 ## Configuring the IoC Container
+
+- The IoC container includes a built-in logging system that can be enabled or disabled.
+
+- You can provide a custom logger implementation when initializing the IoC container.
 
 - Configure the IoC container with necessary dependencies.
 

@@ -9,8 +9,13 @@ public final class IoC {
     internal private(set)
     var mapForAsync: [Key: any AsyncResolver] = [:]
 
+    @usableFromInline
+    internal let logger: ILogger
+
     @inlinable @inline(__always)
-    public init() {}
+    public init(logger: ILogger = Logger()) {
+        self.logger = logger
+    }
 }
 
 extension IoC {
@@ -40,6 +45,8 @@ public extension IoC {
             case .container: SyncContainerResolver(build: resolver)
             case .transient: SyncTransientResolver(build: resolver)
         }
+
+        logger.send("type: \(String(reflecting: type)) registered sync successfully")
     }
 
     @inlinable @inline(__always)
@@ -53,33 +60,59 @@ public extension IoC {
 
         guard withReplacement
                 || self.mapForAsync[key] == nil else {
-            fatalError("failed to register \(type), already registered")
+            fatalError("failed to register \(String(reflecting: type)), already registered")
         }
 
         self.mapForAsync[key] = switch lifecycle {
             case .container: AsyncContainerResolver(build: resolver)
             case .transient: AsyncTransientResolver(build: resolver)
         }
+
+        logger.send("type: \(String(reflecting: type)) registered async successfully")
     }
 
     @inlinable @inline(__always)
     func get<T>(by type: T.Type) -> T? {
-        switch self.mapForSync[key(of: type)]?.instance() {
-            case .none: .none
-            case let .some(inst): inst as? T
+        let key = key(of: type)
+
+        let instance: T? = switch self.mapForSync[key] {
+            case let .some(resolver): resolver.instance() as? T
+            case.none: switch self.mapForAsync[key] {
+                case .none: .none
+                case .some: fatalError("type \(String(reflecting: type)) is registered as async, but sync access is attempted")
+            }
         }
+
+        switch instance {
+            case .none:
+                logger.send("no instance of \(String(reflecting: type)) registered")
+            case .some:
+                logger.send("instance of \(String(reflecting: type)) resolved successfully")
+        }
+
+        return instance
+
     }
 
     @inlinable @inline(__always)
     func get<T>(by type: T.Type) async -> T? {
         let key = key(of: type)
 
-        return switch self.mapForSync[key]?.instance() {
-            case let .some(inst): inst as? T
-            case .none: switch self.mapForAsync[key] {
+        let instance: T? = switch self.mapForAsync[key] {
+            case let .some(resolver): await resolver.instance() as? T
+            case .none: switch self.mapForSync[key] {
+                case let .some(resolver): resolver.instance() as? T
                 case .none: .none
-                case let .some(resolver): await resolver.instance() as? T
             }
         }
+
+        switch instance {
+            case .none:
+                logger.send("no instance of \(String(reflecting: type)) registered")
+            case .some:
+                logger.send("instance of \(String(reflecting: type)) resolved successfully")
+        }
+
+        return instance
     }
 }

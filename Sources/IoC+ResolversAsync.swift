@@ -32,15 +32,19 @@ extension IoC {
 extension IoC {
     public final class AsyncTransientResolver<T: Sendable>: AsyncResolver, Sendable {
 
-        private let lock: AsyncLock = .init()
+        @usableFromInline
+        internal let lock: AsyncLock = .init()
 
+        @usableFromInline
         nonisolated(unsafe)
-        private let build: () async -> T
+        internal let build: () async -> T
 
+        @inlinable @inline(__always)
         public init(build: @escaping () async -> T) {
             self.build = build
         }
 
+        @inlinable @inline(__always)
         public func instance() async -> T {
             await build()
         }

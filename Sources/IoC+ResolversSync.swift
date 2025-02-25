@@ -2,14 +2,21 @@ import Foundation
 
 extension IoC {
     public final class SyncContainerResolver<T>: SyncResolver {
-        private let lock = NSLock()
-        private var _instance: T?
-        private let build: () -> T
+        @usableFromInline
+        internal let lock = NSLock()
 
+        @usableFromInline
+        internal var _instance: T?
+
+        @usableFromInline
+        internal let build: () -> T
+
+        @inlinable @inline(__always)
         public init(build: @escaping () -> T) {
             self.build = build
         }
 
+        @inlinable @inline(__always)
         public func instance() -> T {
             lock.withLock {
                 switch _instance {
@@ -27,12 +34,15 @@ extension IoC {
 
 extension IoC {
     public struct SyncTransientResolver<T>: SyncResolver {
-        private let build: () -> T
+        @usableFromInline
+        internal let build: () -> T
 
+        @inlinable @inline(__always)
         public init(build: @escaping () -> T) {
             self.build = build
         }
 
+        @inlinable @inline(__always)
         public func instance() -> T { self.build() }
     }
 }

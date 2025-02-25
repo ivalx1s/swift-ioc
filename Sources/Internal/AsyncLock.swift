@@ -1,6 +1,7 @@
     /// An async lock implemented using Swift Actor.
     ///
     /// This lock allows you to create critical sections in your asynchronous code.
+@usableFromInline
 internal actor AsyncLock {
         /// Indicates whether the lock is currently held.
     private var isLocked = false

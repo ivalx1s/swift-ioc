@@ -1,6 +1,6 @@
 # SwiftIoC Integration Guide
 
-SwiftIoC is a lightweight dependency injection library designed to simplify dependency management in Swift applications. It helps decouple components, making code more modular and testable.
+SwiftIoC is a lightweight dependency injection library designed to simplify dependency management in Swift applications. It supports asynchronous resolution of dependencies and is fully compatible with Swift 6. It helps decouple components, making code more modular and testable.
 
 ## Adding to the Project
 

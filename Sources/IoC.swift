@@ -19,7 +19,9 @@ public final class IoC: @unchecked Sendable {
     internal let logger: ILogger
 
     @inlinable @inline(__always)
-    public init(logger: ILogger = Logger()) {
+    public init(
+        logger: ILogger = Logger()
+    ) {
         self.logger = logger
     }
 }
@@ -33,9 +35,9 @@ extension IoC {
 }
 
 // registration
-public extension IoC {
+extension IoC {
     @inlinable @inline(__always)
-    func register<T>(
+    public func register<T>(
         _ type: T.Type,
         lifecycle: Lifecycle = .transient,
         withReplacement: Bool = false,
@@ -60,7 +62,7 @@ public extension IoC {
     }
 
     @inlinable @inline(__always)
-    func register<T: Sendable>(
+    public func register<T: Sendable>(
         _ type: T.Type,
         lifecycle: Lifecycle = .transient,
         withReplacement: Bool = false,
@@ -85,9 +87,9 @@ public extension IoC {
 }
 
 // getters
-public extension IoC {
+extension IoC {
     @inlinable @inline(__always)
-    func get<T>(by type: T.Type) -> T? {
+    public func get<T>(by type: T.Type) -> T? {
         let key = key(of: type)
 
         let instance: T? = switch self.mapForSync[key] {
@@ -117,7 +119,7 @@ public extension IoC {
     }
 
     @inlinable @inline(__always)
-    func get<T>(by type: T.Type) async -> T? {
+    public func getAsync<T>(by type: T.Type) async -> T? {
         let key = key(of: type)
 
         let instance: T? = switch self.mapForAsync[key] {
@@ -142,5 +144,15 @@ public extension IoC {
         }
 
         return instance
+    }
+
+    @inlinable @inline(__always)
+    public func waitForResolve<T>(_ type: T.Type) async -> T {
+        while true {
+            switch await getAsync(by: type) {
+                case .none: await Task.yield()
+                case let .some(relux): return relux
+            }
+        }
     }
 }

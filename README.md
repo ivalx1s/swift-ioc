@@ -50,16 +50,21 @@ static let ioc = IoC(logger: MyCustomLogger())
 ```swift
 // Resolver
 extension Relux.Registry {
-    static func optionalResolve<T: Sendable>(_ type: T.Type) async -> T? where T.Type: Sendable {
-        await ioc.get(by: type)
+    @discardableResult
+    static func waitForResolve<T>(_ type: T.Type) async -> T {
+        await ioc.waitForResolve(type)
+    }
+
+    static func optionalResolveAsync<T: Sendable>(_ type: T.Type) async -> T? where T.Type: Sendable {
+        await ioc.getAsync(by: type)
     }
 
     static func optionalResolve<T>(_ type: T.Type) -> T? {
         ioc.get(by: type)
     }
 
-    static func resolve<T: Sendable>(_ type: T.Type) async -> T {
-        await ioc.get(by: type)!
+    static func resolveAsync<T: Sendable>(_ type: T.Type) async -> T {
+        await ioc.getAsync(by: type)!
     }
 
     static func resolve<T>(_ type: T.Type) -> T {
@@ -98,8 +103,8 @@ extension Relux {
 extension Relux.Registry {
     static func buildRelux() async -> Relux {
         let relux = await Relux.init(
-            logger: resolve(Relux.Logger.self),
-            appStore: resolve(Relux.Store.self),
+            logger: await resolve(Relux.Logger.self),
+            appStore: await resolve(Relux.Store.self),
             rootSaga: .init()
         )
         return relux
@@ -125,4 +130,31 @@ private func configureModules() async -> Relux {
     return await Relux.Registry.resolve(Relux.self)
 }
 ```
+
+## Getter Methods
+
+SwiftIoC provides both synchronous and asynchronous accessors for resolving dependencies. If the requested dependency is not available, it returns `nil`.
+
+### Synchronous Getter
+
+```swift
+let instance: MyType? = ioc.get(by: MyType.self)
+```
+
+### Asynchronous Getter
+
+```swift
+let instance: MyType? = await ioc.getAsync(by: MyType.self)
+```
+
+### Wait for Resolve
+
+If you want to wait until a dependency becomes available asynchronously, use:
+
+```swift
+let instance: MyType = await ioc.waitForResolve(MyType.self)
+```
+
+This method will continuously check until the dependency is resolved, yielding between attempts.
+
 

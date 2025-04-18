@@ -4,16 +4,12 @@ public final class IoC: @unchecked Sendable {
     public typealias Key = ObjectIdentifier
 
     @usableFromInline
-    internal
-    let lock: NSLock = NSLock()
+    internal private(set)
+    var mapForSync: AtomicMap<Key, any SyncResolver> = .init()
 
     @usableFromInline
     internal private(set)
-    var mapForSync: [Key: any SyncResolver] = [:]
-
-    @usableFromInline
-    internal private(set)
-    var mapForAsync: [Key: any AsyncResolver] = [:]
+    var mapForAsync: AtomicMap<Key, any AsyncResolver> = .init()
 
     @usableFromInline
     internal let logger: ILogger
@@ -50,13 +46,10 @@ extension IoC {
             fatalError("failed to register \(type), already registered")
         }
 
-        lock.withLock {
-            self.mapForSync[key] = switch lifecycle {
-                case .container: SyncContainerResolver(build: resolver)
-                case .transient: SyncTransientResolver(build: resolver)
-            }
+        self.mapForSync[key] = switch lifecycle {
+            case .container: SyncContainerResolver(build: resolver)
+            case .transient: SyncTransientResolver(build: resolver)
         }
-
 
         logger.send("type: \(String(reflecting: type)) registered sync successfully")
     }
@@ -75,11 +68,9 @@ extension IoC {
             fatalError("failed to register \(String(reflecting: type)), already registered")
         }
 
-        lock.withLock {
-            self.mapForAsync[key] = switch lifecycle {
-                case .container: AsyncContainerResolver(build: resolver)
-                case .transient: AsyncTransientResolver(build: resolver)
-            }
+        self.mapForAsync[key] = switch lifecycle {
+            case .container: AsyncContainerResolver(build: resolver)
+            case .transient: AsyncTransientResolver(build: resolver)
         }
 
         logger.send("type: \(String(reflecting: type)) registered async successfully")
@@ -115,7 +106,6 @@ extension IoC {
         }
 
         return instance
-
     }
 
     @inlinable @inline(__always)
